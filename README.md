@@ -9,6 +9,27 @@ This is a multithreaded stock quotes querying code. It loads symbols
 from a text file and gets the quotes by using Yahoo Finance API
 by using System.Threading.ThreadPool.
 
+How to build :
+
+a) Windows systems : You can use Visual Studio 2013 solution file provided. 
+Tested with Visual Studio 2013 Express Edition
+
+b) Linux Systems : You can build against Mono. This has been tested against Debian Wheezy :
+
+	1) Copy two cs files into your working directory.
+	2) Install mono :
+				
+				sudo apt-get install mono-complete
+		
+	3) Compile the project : 
+	
+				mcs *.cs -out:main.exe 
+				
+	4) Execute it :
+	
+				mono main.exe
+	
+
 Example code :
 
             StockQueryEngine engine = new StockQueryEngine();

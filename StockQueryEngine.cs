@@ -11,11 +11,15 @@ namespace MultithreadedStockQuotes
         private string m_symbol;
         private string m_quote;
         private long m_execution_time;
+        private string m_base_url;
+        private string m_url_function;
 
-        public StockQueryEngineTaskInfo(int thread_index, string symbol)
+        public StockQueryEngineTaskInfo(int thread_index, string symbol, string base_url, string url_function)
         {
             m_thread_index = thread_index;
             m_symbol = symbol;
+            m_base_url = base_url;
+            m_url_function = url_function;
             m_execution_time = 0;
         }
         public int ThreadIndex
@@ -40,6 +44,18 @@ namespace MultithreadedStockQuotes
             get { return m_execution_time; }
             set { m_execution_time = value; }
         }
+
+        public string BaseUrl
+        {
+            get { return m_base_url; }
+            set { m_base_url = value; }
+        }
+
+        public string UrlFunction
+        {
+            get { return m_url_function; }
+            set { m_url_function = value; }
+        }
     }
 
     class StockQueryEngineQueryTask
@@ -58,19 +74,19 @@ namespace MultithreadedStockQuotes
             StockQueryEngineTaskInfo thread_info = (StockQueryEngineTaskInfo)threadContext;
 
             m_watch.Start();
-            thread_info.Quote = QuerySymbol(thread_info.Symbol);
+            thread_info.Quote = QuerySymbol(thread_info.Symbol, thread_info.BaseUrl, thread_info.UrlFunction);
             m_watch.Stop();
             thread_info.ExecutionTime = m_watch.ElapsedMilliseconds;
             m_done_flag.Set();
         }
 
-        public static string QuerySymbol(string symbol)
+        public static string QuerySymbol(string symbol, string baseUrl, string function)
         {
             string csvData;
 
             using (WebClient web = new WebClient())
             {
-                string url = "http://finance.yahoo.com/d/quotes.csv?s=" + symbol + "&f=snbaopl1";
+                string url = baseUrl + symbol + function;
                 csvData = web.DownloadString(url);
                 string[] args = csvData.Split(',');
                 return args[2];
@@ -83,16 +99,23 @@ namespace MultithreadedStockQuotes
         private System.Collections.Generic.List<string> m_symbols;
         private bool m_symbols_loaded;
 
+        private string m_base_url;
+        private string m_url_function;
+        
         private long m_latest_execution_time;
         private Stopwatch m_watch;
         
         private ManualResetEvent[] m_task_done_flags;
         private StockQueryEngineQueryTask[] m_tasks;
         private StockQueryEngineTaskInfo[] m_task_infos;
+        private System.Collections.Generic.Queue<string> m_errors;
 
         public StockQueryEngine()
         {
+            m_base_url = "http://finance.yahoo.com/d/quotes.csv?s=";
+            m_url_function = "&f=snbaopl1";
             m_symbols = new System.Collections.Generic.List<string>();
+            m_errors = new System.Collections.Generic.Queue<string>();
             m_symbols_loaded = false;
             m_latest_execution_time = 0;
             m_watch = new Stopwatch();
@@ -123,49 +146,93 @@ namespace MultithreadedStockQuotes
 
         public bool LoadSymbolsFromFile(string filename)
         {
-            using (System.IO.StreamReader file = new System.IO.StreamReader(filename))
+            try
             {
-                string line;
-                while ((line = file.ReadLine()) != null)
+                using (System.IO.StreamReader file = new System.IO.StreamReader(filename))
                 {
-                    m_symbols.Add(line);
+                    string line;
+
+                    while ((line = file.ReadLine()) != null)
+                    {
+                        m_symbols.Add(line);
+                    }
+
+                    m_symbols_loaded = true;
                 }
+
+            }
+            catch(Exception e)
+            {
+                m_errors.Enqueue(e.Message);
             }
 
-            m_symbols_loaded = true;
-            return true;
+            return m_symbols_loaded;
+        }
+
+        public string GetLastError()
+        {
+            if (m_errors.Count == 0)
+            {
+                return "";
+            }
+
+            return m_errors.Dequeue();
+        }
+
+        public static bool CheckForInternetConnection()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                using (var stream = client.OpenRead("http://www.google.com"))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public StockQueryEngineTaskInfo[] Execute()
         {
-            if( m_symbols_loaded == false )
+            if (m_symbols_loaded == false)
             {
                 return null;
             }
 
-            m_watch.Start();
-
-            int count_symbols = m_symbols.Count;
-
-            m_task_done_flags = new ManualResetEvent[count_symbols];
-            m_tasks = new StockQueryEngineQueryTask[count_symbols];
-            m_task_infos = new StockQueryEngineTaskInfo[count_symbols];
-
-            for (int i = 0; i < count_symbols; i++ )
+            try
             {
-                m_task_done_flags[i] = new ManualResetEvent(false);
-                m_tasks[i] = new StockQueryEngineQueryTask(m_task_done_flags[i]);
+                m_watch.Start();
 
-                m_task_infos[i] = new StockQueryEngineTaskInfo(i, m_symbols[i]);
-                ThreadPool.QueueUserWorkItem( new WaitCallback(m_tasks[i].ThreadPoolCallback), m_task_infos[i] );
+                int count_symbols = m_symbols.Count;
+
+                m_task_done_flags = new ManualResetEvent[count_symbols];
+                m_tasks = new StockQueryEngineQueryTask[count_symbols];
+                m_task_infos = new StockQueryEngineTaskInfo[count_symbols];
+
+                for (int i = 0; i < count_symbols; i++)
+                {
+                    m_task_done_flags[i] = new ManualResetEvent(false);
+                    m_tasks[i] = new StockQueryEngineQueryTask(m_task_done_flags[i]);
+
+                    m_task_infos[i] = new StockQueryEngineTaskInfo(i, m_symbols[i], m_base_url, m_url_function);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(m_tasks[i].ThreadPoolCallback), m_task_infos[i]);
+                }
+
+                WaitHandle.WaitAll(m_task_done_flags);
+
+                m_watch.Stop();
+                m_latest_execution_time = m_watch.ElapsedMilliseconds;
+                return m_task_infos;
+            }
+            catch (Exception e)
+            {
+                m_errors.Enqueue(e.Message);
             }
 
-            WaitHandle.WaitAll(m_task_done_flags);
-
-            m_watch.Stop();
-            m_latest_execution_time = m_watch.ElapsedMilliseconds;
-
-            return m_task_infos;
+            return null;
         }
     }
 }
