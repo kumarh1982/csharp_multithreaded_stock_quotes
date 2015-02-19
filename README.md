@@ -18,7 +18,7 @@ Tested with Visual Studio 2013 Express Edition.
 	2) Change your directory to build/windows
 	3) Type "msbuild MultithreadedStockQuotes.csproj" and then press enter
 	
-	Alternative you can use Visual Studo
+	Alternatively you can use Visual Studo
 
 b) Linux Systems : You can build against Mono. This has been tested against Debian Wheezy :
 
