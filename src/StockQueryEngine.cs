@@ -1,101 +1,13 @@
 ﻿using System;
-using System.Net;           //for using WebClient
 using System.Threading;     //for using ThreadPool
 using System.Diagnostics;   //for using StopWatch
+using System.Net;           //for using WebClient
 
 namespace MultithreadedStockQuotes
 {
-    class StockQueryEngineTaskInfo
-    {
-        private int m_thread_index;
-        private string m_symbol;
-        private string m_quote;
-        private long m_execution_time;
-        private string m_base_url;
-        private string m_url_function;
-
-        public StockQueryEngineTaskInfo(int thread_index, string symbol, string base_url, string url_function)
-        {
-            m_thread_index = thread_index;
-            m_symbol = symbol;
-            m_base_url = base_url;
-            m_url_function = url_function;
-            m_execution_time = 0;
-        }
-        public int ThreadIndex
-        {
-            get { return m_thread_index; }
-            set { m_thread_index = value; }
-        }
-        public string Symbol
-        {
-            get { return m_symbol; }
-            set { m_symbol = value; }
-        }
-
-        public string Quote
-        {
-            get { return m_quote; }
-            set { m_quote = value; }
-        }
-
-        public long ExecutionTime
-        {
-            get { return m_execution_time; }
-            set { m_execution_time = value; }
-        }
-
-        public string BaseUrl
-        {
-            get { return m_base_url; }
-            set { m_base_url = value; }
-        }
-
-        public string UrlFunction
-        {
-            get { return m_url_function; }
-            set { m_url_function = value; }
-        }
-    }
-
-    class StockQueryEngineQueryTask
-    {
-        private ManualResetEvent m_done_flag;
-        private Stopwatch m_watch;
-
-        public StockQueryEngineQueryTask(ManualResetEvent done_flag)
-        {
-            m_done_flag = done_flag;
-            m_watch = new Stopwatch();
-        }
-
-        public void ThreadPoolCallback(Object threadContext)
-        {
-            StockQueryEngineTaskInfo thread_info = (StockQueryEngineTaskInfo)threadContext;
-
-            m_watch.Start();
-            thread_info.Quote = QuerySymbol(thread_info.Symbol, thread_info.BaseUrl, thread_info.UrlFunction);
-            m_watch.Stop();
-            thread_info.ExecutionTime = m_watch.ElapsedMilliseconds;
-            m_done_flag.Set();
-        }
-
-        public static string QuerySymbol(string symbol, string baseUrl, string function)
-        {
-            string csvData;
-
-            using (WebClient web = new WebClient())
-            {
-                string url = baseUrl + symbol + function;
-                csvData = web.DownloadString(url);
-                string[] args = csvData.Split(',');
-                return args[2];
-            }
-        }
-    }
-    
     class StockQueryEngine
     {
+		#region MEMBERS
         private System.Collections.Generic.List<string> m_symbols;
         private bool m_symbols_loaded;
 
@@ -109,6 +21,35 @@ namespace MultithreadedStockQuotes
         private StockQueryEngineQueryTask[] m_tasks;
         private StockQueryEngineTaskInfo[] m_task_infos;
         private System.Collections.Generic.Queue<string> m_errors;
+		#endregion
+		
+		#region STATIC METHODS
+        public static bool CheckForInternetConnection()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                using (var stream = client.OpenRead("http://www.google.com"))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+		
+		public static bool IsRunningUnderLinux()
+		{
+			if( System.Environment.OSVersion.ToString().Contains("Unix") )
+			{
+				return true;
+			}
+			
+			return false;
+		}
+		#endregion
 
         public StockQueryEngine()
         {
@@ -177,22 +118,6 @@ namespace MultithreadedStockQuotes
             }
 
             return m_errors.Dequeue();
-        }
-
-        public static bool CheckForInternetConnection()
-        {
-            try
-            {
-                using (var client = new WebClient())
-                using (var stream = client.OpenRead("http://www.google.com"))
-                {
-                    return true;
-                }
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public StockQueryEngineTaskInfo[] Execute()

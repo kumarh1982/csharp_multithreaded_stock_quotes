@@ -17,20 +17,17 @@ namespace MultithreadedStockQuotes
 
             string input_file = "";
 
-            /*
-                The reason for the check below is Mono doesn`t pass program
-                name as the first argument.
-            */
-            if (num_arguments == 2)
-            {
-                input_file = args[1]; // Windows Systems
-            }
-            else
-            {
-                input_file = args[0]; // Linux Systems
-            }
-
-
+            //    The reason for the check below is Mono doesn`t pass program
+            //    name as the first argument.
+			if( StockQueryEngine.IsRunningUnderLinux() )
+			{
+				input_file = args[0]; // Linux Systems
+			}
+			else
+			{
+				input_file = args[1]; // Windows Systems
+			}
+			
             StockQueryEngine engine = new StockQueryEngine();
 
             engine.SetMaxNumberOfThreads(System.Environment.ProcessorCount);
@@ -67,6 +64,6 @@ namespace MultithreadedStockQuotes
                 Console.WriteLine("No internet connection.");
             }
         }
-
+		
     }
 }

@@ -12,22 +12,30 @@ by using System.Threading.ThreadPool.
 How to build :
 
 a) Windows systems : You can use Visual Studio 2013 solution file provided. 
-Tested with Visual Studio 2013 Express Edition
+Tested with Visual Studio 2013 Express Edition.
+
+	1) Open Visual Studio developer command line
+	2) Change your directory to build/windows
+	3) Type "msbuild MultithreadedStockQuotes.csproj" and then press enter
+	
+	Alternative you can use Visual Studo
 
 b) Linux Systems : You can build against Mono. This has been tested against Debian Wheezy :
 
-	1) Copy two cs files into your working directory.
-	2) Install mono :
+	Prerequisites : You need to install Mono for your platform. For Debian systems :
 				
 				sudo apt-get install mono-complete
 		
-	3) Compile the project : 
+	To build : 
 	
-				mcs *.cs -out:main.exe 
+			1) Change your directory to build/linux
+			2) Type "make" and press enter
+	
 				
-	4) Execute it :
-	
-				mono main.exe
+	How to execute it : After a successful build, the executable is created under 
+	root directory. After changing your directory to the executable`s location :
+		
+				mono multithreaded_stock_quotes.exe symbols.txt
 	
 
 Example code :
@@ -81,4 +89,3 @@ Example output :
 			16 : FTR 6.65 , in 836 miliseconds
 
 			----------------------------------------------------------------------------
-			Press any key to continue . . .
