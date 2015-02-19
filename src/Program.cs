@@ -15,18 +15,7 @@ namespace MultithreadedStockQuotes
                 return;
             }
 
-            string input_file = "";
-
-            //    The reason for the check below is Mono doesn`t pass program
-            //    name as the first argument.
-			if( StockQueryEngine.IsRunningUnderLinux() )
-			{
-				input_file = args[0]; // Linux Systems
-			}
-			else
-			{
-				input_file = args[1]; // Windows Systems
-			}
+            string input_file = input_file = args[0];
 			
             StockQueryEngine engine = new StockQueryEngine();
 
@@ -34,15 +23,21 @@ namespace MultithreadedStockQuotes
 
             if (engine.LoadSymbolsFromFile(input_file) == false)
             {
-                Console.WriteLine("Error occured during engine initalisation : " + System.Environment.NewLine);
-                Console.WriteLine(engine.GetLastError());
-                return;
+               OnEngineError(ref engine);
+               return;
             }
 
             if (StockQueryEngine.CheckForInternetConnection() == true)
             {
 
-                StockQueryEngineTaskInfo[] results = engine.Execute();
+                StockQueryEngineTaskInfo[] results = null;
+                results = engine.Execute();
+
+                if( results == null )
+                {
+                    OnEngineError(ref engine);
+                    return;
+                }
 
                 Console.WriteLine("----------------------------------------------------------------------------");
                 Console.WriteLine("Entire execution took " + engine.ExecutionTime + " miliseconds");
@@ -63,6 +58,12 @@ namespace MultithreadedStockQuotes
             {
                 Console.WriteLine("No internet connection.");
             }
+        }
+
+        static void OnEngineError(ref StockQueryEngine engine)
+        {
+            Console.WriteLine("Error occured during engine initalisation : " + System.Environment.NewLine);
+            Console.WriteLine(engine.GetLastError());
         }
 		
     }

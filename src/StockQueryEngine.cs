@@ -40,6 +40,7 @@ namespace MultithreadedStockQuotes
             }
         }
 		
+        //Added for future experimental purposes with Mono/Linux
 		public static bool IsRunningUnderLinux()
 		{
 			if( System.Environment.OSVersion.ToString().Contains("Unix") )
