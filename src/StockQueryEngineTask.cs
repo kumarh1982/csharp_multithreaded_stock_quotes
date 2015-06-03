@@ -5,12 +5,12 @@ using System.Threading;     //for ManualResetEvent
 
 namespace MultithreadedStockQuotes
 {
-    class StockQueryEngineQueryTask
+    class StockQueryEngineTask
     {
         private ManualResetEvent m_done_flag;
         private Stopwatch m_watch;
 
-        public StockQueryEngineQueryTask(ManualResetEvent done_flag)
+        public StockQueryEngineTask(ManualResetEvent done_flag)
         {
             m_done_flag = done_flag;
             m_watch = new Stopwatch();
@@ -21,22 +21,30 @@ namespace MultithreadedStockQuotes
             StockQueryEngineTaskInfo thread_info = (StockQueryEngineTaskInfo)threadContext;
 
             m_watch.Start();
-            thread_info.Quote = QuerySymbol(thread_info.Symbol, thread_info.BaseUrl, thread_info.UrlFunction);
+            QuerySymbol(thread_info);
             m_watch.Stop();
+
+            //Some fields from Yahoo Finance API are returned with \n
+            thread_info.Bid = thread_info.Bid.Replace("\n", "");
+            thread_info.Offer = thread_info.Offer.Replace("\n", "");
+
             thread_info.ExecutionTime = m_watch.ElapsedMilliseconds;
             m_done_flag.Set();
         }
 
-        public static string QuerySymbol(string symbol, string baseUrl, string function)
+        public static void QuerySymbol(StockQueryEngineTaskInfo thread_info)
         {
             string csvData;
 
             using (WebClient web = new WebClient())
             {
-                string url = baseUrl + symbol + function;
+                string url = thread_info.BaseUrl + thread_info.Symbol + thread_info.UrlFunction;
                 csvData = web.DownloadString(url);
+
                 string[] args = csvData.Split(',');
-                return args[2];
+                
+                thread_info.Offer = args[0];
+                thread_info.Bid = args[1];
             }
         }
     }

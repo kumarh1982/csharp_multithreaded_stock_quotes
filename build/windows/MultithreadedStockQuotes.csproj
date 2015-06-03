@@ -61,8 +61,8 @@
     <Compile Include="..\..\src\StockQueryEngine.cs">
       <Link>StockQueryEngine.cs</Link>
     </Compile>
-    <Compile Include="..\..\src\StockQueryEngineQueryTask.cs">
-      <Link>StockQueryEngineQueryTask.cs</Link>
+    <Compile Include="..\..\src\StockQueryEngineTask.cs">
+      <Link>StockQueryEngineTask.cs</Link>
     </Compile>
     <Compile Include="..\..\src\StockQueryEngineTaskInfo.cs">
       <Link>StockQueryEngineTaskInfo.cs</Link>

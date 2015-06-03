@@ -18,7 +18,7 @@ namespace MultithreadedStockQuotes
         private Stopwatch m_watch;
         
         private ManualResetEvent[] m_task_done_flags;
-        private StockQueryEngineQueryTask[] m_tasks;
+        private StockQueryEngineTask[] m_tasks;
         private StockQueryEngineTaskInfo[] m_task_infos;
         private System.Collections.Generic.Queue<string> m_errors;
 		#endregion
@@ -55,7 +55,7 @@ namespace MultithreadedStockQuotes
         public StockQueryEngine()
         {
             m_base_url = "http://finance.yahoo.com/d/quotes.csv?s=";
-            m_url_function = "&f=snbaopl1";
+            m_url_function = "&f=ba";
             m_symbols = new System.Collections.Generic.List<string>();
             m_errors = new System.Collections.Generic.Queue<string>();
             m_symbols_loaded = false;
@@ -96,6 +96,11 @@ namespace MultithreadedStockQuotes
 
                     while ((line = file.ReadLine()) != null)
                     {
+                        if (line.StartsWith("#"))
+                        {
+                            continue;
+                        }
+
                         m_symbols.Add(line);
                     }
 
@@ -121,11 +126,11 @@ namespace MultithreadedStockQuotes
             return m_errors.Dequeue();
         }
 
-        public StockQueryEngineTaskInfo[] Execute()
+        public bool Execute()
         {
             if (m_symbols_loaded == false)
             {
-                return null;
+                return false;
             }
 
             try
@@ -135,30 +140,45 @@ namespace MultithreadedStockQuotes
                 int count_symbols = m_symbols.Count;
 
                 m_task_done_flags = new ManualResetEvent[count_symbols];
-                m_tasks = new StockQueryEngineQueryTask[count_symbols];
+                m_tasks = new StockQueryEngineTask[count_symbols];
                 m_task_infos = new StockQueryEngineTaskInfo[count_symbols];
 
                 for (int i = 0; i < count_symbols; i++)
                 {
                     m_task_done_flags[i] = new ManualResetEvent(false);
-                    m_tasks[i] = new StockQueryEngineQueryTask(m_task_done_flags[i]);
+                    m_tasks[i] = new StockQueryEngineTask(m_task_done_flags[i]);
 
                     m_task_infos[i] = new StockQueryEngineTaskInfo(i, m_symbols[i], m_base_url, m_url_function);
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(m_tasks[i].ThreadPoolCallback), m_task_infos[i]);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback( m_tasks[i].ThreadPoolCallback), m_task_infos[i]);
                 }
-
-                WaitHandle.WaitAll(m_task_done_flags);
-
-                m_watch.Stop();
-                m_latest_execution_time = m_watch.ElapsedMilliseconds;
-                return m_task_infos;
             }
             catch (Exception e)
             {
                 m_errors.Enqueue(e.Message);
+                return false;
             }
 
-            return null;
+            return true;
+        }
+
+        public StockQueryEngineTaskInfo[] Join()
+        {
+            WaitHandle.WaitAll(m_task_done_flags);
+            m_watch.Stop();
+            m_latest_execution_time = m_watch.ElapsedMilliseconds;
+            return m_task_infos;
+        }
+
+        public void OutputAsCSV(string filename)
+        {
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename))
+            {
+                file.WriteLine("#symbol,bid,offer");
+                foreach (var task_info in m_task_infos)
+                {
+                    file.WriteLine(task_info.Symbol + "," + task_info.Bid + "," + task_info.Offer);
+                }
+            }
         }
     }
 }

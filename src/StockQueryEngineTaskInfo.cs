@@ -4,7 +4,8 @@ namespace MultithreadedStockQuotes
     {
         private int m_thread_index;
         private string m_symbol;
-        private string m_quote;
+        private string m_bid;
+        private string m_offer;
         private long m_execution_time;
         private string m_base_url;
         private string m_url_function;
@@ -28,10 +29,16 @@ namespace MultithreadedStockQuotes
             set { m_symbol = value; }
         }
 
-        public string Quote
+        public string Bid
         {
-            get { return m_quote; }
-            set { m_quote = value; }
+            get { return m_bid; }
+            set { m_bid = value; }
+        }
+
+        public string Offer
+        {
+            get { return m_offer; }
+            set { m_offer = value; }
         }
 
         public long ExecutionTime

@@ -5,17 +5,17 @@ namespace MultithreadedStockQuotes
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             int num_arguments = args.Length;
 
             if (num_arguments == 0)
             {
                 Console.WriteLine("Please provide a symbols file as argument." + System.Environment.NewLine);
-                return;
+                return 1;
             }
 
-            string input_file = input_file = args[0];
+            string input_file = args[0];
 			
             StockQueryEngine engine = new StockQueryEngine();
 
@@ -24,19 +24,21 @@ namespace MultithreadedStockQuotes
             if (engine.LoadSymbolsFromFile(input_file) == false)
             {
                OnEngineError(ref engine);
-               return;
+               return 2;
             }
 
             if (StockQueryEngine.CheckForInternetConnection() == true)
             {
 
                 StockQueryEngineTaskInfo[] results = null;
-                results = engine.Execute();
-
-                if( results == null )
+                if ( engine.Execute() )
+                {
+                    results = engine.Join();
+                }
+                else
                 {
                     OnEngineError(ref engine);
-                    return;
+                    return 3;
                 }
 
                 Console.WriteLine("----------------------------------------------------------------------------");
@@ -48,15 +50,25 @@ namespace MultithreadedStockQuotes
 
                 foreach (StockQueryEngineTaskInfo info in results)
                 {
-                    Console.WriteLine(info.ThreadIndex + " : " + info.Symbol + " " + info.Quote + " , in " + info.ExecutionTime + " miliseconds");
+                    Console.Write(info.ThreadIndex + " : " + info.Symbol + " " + info.Bid + " , in " + info.ExecutionTime + " miliseconds");
+                    Console.Write(Environment.NewLine);
+                    Console.Write(Environment.NewLine);
                 }
 
                 Console.WriteLine("");
                 Console.WriteLine("----------------------------------------------------------------------------");
+
+                if (num_arguments == 2)
+                {
+                    engine.OutputAsCSV(args[1]);
+                }
+
+                return 0;
             }
             else
             {
                 Console.WriteLine("No internet connection.");
+                return 4;
             }
         }
 

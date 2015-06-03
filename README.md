@@ -45,7 +45,8 @@ Example code :
             engine.SetMaxNumberOfThreads(System.Environment.ProcessorCount);
             engine.LoadSymbolsFromFile("symbols.txt");
 
-            StockQueryEngineTaskInfo[] results = engine.Execute();
+			engine.Execute();
+            StockQueryEngineTaskInfo[] results = engine.Join();
 
             Console.WriteLine("----------------------------------------------------------------------------");
             Console.WriteLine("Entire execution took " + engine.ExecutionTime + " miliseconds");
@@ -89,3 +90,42 @@ Example output :
 			16 : FTR 6.65 , in 836 miliseconds
 
 			----------------------------------------------------------------------------
+			
+How does Yahoo Finance API work :
+
+		Yahoo Finance API is a REST API that returns CSV information.
+		You need to create a URL to request certain information :
+		
+		1. Base URL is : http://finance.yahoo.com/d/quotes.csv
+		
+		2. To specify symbols , you add s argument :
+		
+			s=MSFT	
+			
+			This one is for only MSFT symbol. To request more than one symbols :
+			
+			s=MSFT+AAPL
+			
+		3. By default, all symbols are the ones listed in US exchanges. 
+		If you want to query a symbol from a non-US exchange, you have to find out 
+		the exhange code :
+		
+			s=BARC.L
+			
+			In this example L stands for London Stock Exchange.
+			
+		4. You will also need to specify what information you want to retrieve.
+		You use f argument for this purpose :
+		
+				f=ab
+				
+				This project currently only requests bid and offer per symbol.
+				Therefore the engine specifies a for ask and b for bid.
+				
+		Example URL : You can test the url below in your browser :
+		
+						http://finance.yahoo.com/d/quotes.csv?s=MSFT&f=nab
+						
+						This one will request ask and bid for MSFT symbol.
+		
+			
