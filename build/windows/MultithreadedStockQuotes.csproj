@@ -67,6 +67,9 @@
     <Compile Include="..\..\src\StockQueryEngineTaskInfo.cs">
       <Link>StockQueryEngineTaskInfo.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\Utility.cs">
+      <Link>Utility.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

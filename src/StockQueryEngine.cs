@@ -1,61 +1,13 @@
 ﻿using System;
 using System.Threading;     //for using ThreadPool
 using System.Diagnostics;   //for using StopWatch
-using System.Net;           //for using WebClient
 
 namespace MultithreadedStockQuotes
 {
     class StockQueryEngine
     {
-		#region MEMBERS
-        private System.Collections.Generic.List<string> m_symbols;
-        private bool m_symbols_loaded;
-
-        private string m_base_url;
-        private string m_url_function;
-        
-        private long m_latest_execution_time;
-        private Stopwatch m_watch;
-        
-        private ManualResetEvent[] m_task_done_flags;
-        private StockQueryEngineTask[] m_tasks;
-        private StockQueryEngineTaskInfo[] m_task_infos;
-        private System.Collections.Generic.Queue<string> m_errors;
-		#endregion
-		
-		#region STATIC METHODS
-        public static bool CheckForInternetConnection()
+		public StockQueryEngine()
         {
-            try
-            {
-                using (var client = new WebClient())
-                using (var stream = client.OpenRead("http://www.google.com"))
-                {
-                    return true;
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-		
-        //Added for future experimental purposes with Mono/Linux
-		public static bool IsRunningUnderLinux()
-		{
-			if( System.Environment.OSVersion.ToString().Contains("Unix") )
-			{
-				return true;
-			}
-			
-			return false;
-		}
-		#endregion
-
-        public StockQueryEngine()
-        {
-            m_base_url = "http://finance.yahoo.com/d/quotes.csv?s=";
-            m_url_function = "&f=ba";
             m_symbols = new System.Collections.Generic.List<string>();
             m_errors = new System.Collections.Generic.Queue<string>();
             m_symbols_loaded = false;
@@ -169,16 +121,20 @@ namespace MultithreadedStockQuotes
             return m_task_infos;
         }
 
-        public void OutputAsCSV(string filename)
-        {
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename))
-            {
-                file.WriteLine("#symbol,bid,offer");
-                foreach (var task_info in m_task_infos)
-                {
-                    file.WriteLine(task_info.Symbol + "," + task_info.Bid + "," + task_info.Offer);
-                }
-            }
-        }
+        #region MEMBERS
+        private System.Collections.Generic.List<string> m_symbols;
+        private bool m_symbols_loaded;
+
+        private const string m_base_url = "http://finance.yahoo.com/d/quotes.csv?s=";
+        private const string m_url_function = "&f=ba";
+
+        private long m_latest_execution_time;
+        private Stopwatch m_watch;
+
+        private ManualResetEvent[] m_task_done_flags;
+        private StockQueryEngineTask[] m_tasks;
+        private StockQueryEngineTaskInfo[] m_task_infos;
+        private System.Collections.Generic.Queue<string> m_errors;
+        #endregion
     }
 }

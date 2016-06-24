@@ -23,6 +23,7 @@ namespace MultithreadedStockQuotes
             get { return m_thread_index; }
             set { m_thread_index = value; }
         }
+
         public string Symbol
         {
             get { return m_symbol; }
@@ -57,6 +58,12 @@ namespace MultithreadedStockQuotes
         {
             get { return m_url_function; }
             set { m_url_function = value; }
+        }
+
+        public override string ToString()
+        {
+            var ret = m_symbol + "," + m_bid + "," + m_offer;
+            return ret;
         }
     }
 }

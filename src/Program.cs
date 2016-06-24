@@ -18,7 +18,6 @@ namespace MultithreadedStockQuotes
             string input_file = args[0];
 			
             StockQueryEngine engine = new StockQueryEngine();
-
             engine.SetMaxNumberOfThreads(System.Environment.ProcessorCount);
 
             if (engine.LoadSymbolsFromFile(input_file) == false)
@@ -27,9 +26,8 @@ namespace MultithreadedStockQuotes
                return 2;
             }
 
-            if (StockQueryEngine.CheckForInternetConnection() == true)
+            if (Utility.CheckForInternetConnection() == true)
             {
-
                 StockQueryEngineTaskInfo[] results = null;
                 if ( engine.Execute() )
                 {
@@ -50,7 +48,7 @@ namespace MultithreadedStockQuotes
 
                 foreach (StockQueryEngineTaskInfo info in results)
                 {
-                    Console.Write(info.ThreadIndex + " : " + info.Symbol + " " + info.Bid + " , in " + info.ExecutionTime + " miliseconds");
+                    Console.Write(info.ThreadIndex + " : " + info.Symbol + " " + info.Bid + " , in " + info.ExecutionTime + " milliseconds");
                     Console.Write(Environment.NewLine);
                     Console.Write(Environment.NewLine);
                 }
@@ -60,7 +58,7 @@ namespace MultithreadedStockQuotes
 
                 if (num_arguments == 2)
                 {
-                    engine.OutputAsCSV(args[1]);
+                    Utility.ExportToCSV(args[1], results, "#symbol,bid,offer");
                 }
 
                 return 0;
