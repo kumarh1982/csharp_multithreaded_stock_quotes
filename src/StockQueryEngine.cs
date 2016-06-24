@@ -6,7 +6,7 @@ namespace MultithreadedStockQuotes
 {
     class StockQueryEngine
     {
-		public StockQueryEngine()
+        public StockQueryEngine()
         {
             m_symbols = new System.Collections.Generic.List<string>();
             m_errors = new System.Collections.Generic.Queue<string>();

@@ -16,7 +16,7 @@ namespace MultithreadedStockQuotes
             }
 
             string input_file = args[0];
-			
+            
             StockQueryEngine engine = new StockQueryEngine();
             engine.SetMaxNumberOfThreads(System.Environment.ProcessorCount);
 
@@ -75,6 +75,6 @@ namespace MultithreadedStockQuotes
             Console.WriteLine("Error occured during engine initalisation : " + System.Environment.NewLine);
             Console.WriteLine(engine.GetLastError());
         }
-		
+        
     }
 }
